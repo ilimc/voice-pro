@@ -26,24 +26,24 @@ logger = structlog.get_logger()
 
 
 # API Configuration
-DIARIZE_API_ENDPOINT = "https://studio.mosi.cn/v1/audio/transcriptions"
-DIARIZE_MODEL_NAME = "moss-transcribe-diarize"
+MOSI_API_ENDPOINT = "https://studio.mosi.cn/v1/audio/transcriptions"
+MOSI_MODEL_NAME = "moss-transcribe-diarize"
 
 
-def get_diarize_api_key() -> str:
-    """Get the API key for MOSS Transcribe-Diarize service."""
-    key = get_env('DIARIZE_API_KEY')
+def get_mosi_api_key() -> str:
+    """Get the API key for MOSI platform."""
+    key = get_env('MOSI_API_KEY')
     if not key:
         raise ValueError(
-            "DIARIZE_API_KEY environment variable is required. "
+            "MOSI_API_KEY environment variable is required. "
             "Please set it in your .env file or environment."
         )
     return key
 
 
-def diarize_api_available() -> bool:
-    """Check if the Diarize API is configured."""
-    return get_env('DIARIZE_API_KEY') is not None
+def mosi_api_available() -> bool:
+    """Check if the MOSI API is configured."""
+    return get_env('MOSI_API_KEY') is not None
 
 
 class DiarizeInference:
@@ -55,8 +55,8 @@ class DiarizeInference:
     """
     
     def __init__(self):
-        self.api_endpoint = get_env('DIARIZE_API_ENDPOINT') or DIARIZE_API_ENDPOINT
-        self.model_name = DIARIZE_MODEL_NAME
+        self.api_endpoint = get_env('MOSI_API_ENDPOINT') or MOSI_API_ENDPOINT
+        self.model_name = MOSI_MODEL_NAME
         
     @staticmethod
     def available_models() -> List[str]:
@@ -65,8 +65,9 @@ class DiarizeInference:
     
     @staticmethod
     def available_langs() -> List[str]:
-        """Return available languages. The model auto-detects language."""
-        return ['Automatic Detection', 'chinese', 'english']
+        """Return available languages. Uses same list as other Whisper engines for UI consistency."""
+        import whisper
+        return sorted(list(whisper.tokenizer.LANGUAGES.values()))
     
     @staticmethod
     def available_compute_types() -> List[str]:
@@ -127,7 +128,7 @@ class DiarizeInference:
         start_time = time.time()
         
         try:
-            api_key = get_diarize_api_key()
+            api_key = get_mosi_api_key()
         except ValueError as e:
             raise ValueError(str(e))
         
@@ -151,7 +152,7 @@ class DiarizeInference:
             "model": self.model_name,
             "audio_data": f"data:{mime_type};base64,{audio_data}",
             "sampling_params": {
-                "max_new_tokens": 2048,
+                "max_new_tokens": 16384,
                 "temperature": 0.0
             }
         }
